@@ -1,6 +1,6 @@
-#N p36winghassler.rle
+#N P36winghassler.rle
 #C https://conwaylife.com/wiki/Wing_hasslers
-#C https://www.conwaylife.com/patterns/p36winghassler.rle
+#C https://www.conwaylife.com/patterns/P36winghassler.rle
 x = 45, y = 45, rule = B3/S23
 21b2o$21bo$12b2o4b2obo3b2o$11bobo4bobo4bobo$11bo15bo$8b2ob2o13b2ob2o$
 8b2obobo11bobob2o$11bob13obo$5b2o4bobob9obobo$5b2o5bo5b3o5bo2$3b6o$2b
