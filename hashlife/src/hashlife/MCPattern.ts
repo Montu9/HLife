@@ -1,26 +1,33 @@
 import Hashlife from "./Hashlife";
-import MCReader from "./MCReader";
 import Matrix from "./Matrix";
 import Node from "./Node";
-import { NodeType } from "./NodeType";
+import Pattern from "./Pattern";
 
-export default class MCPattern {
-    file: MCReader;
-
-    constructor(file: MCReader) {
-        this.file = file;
+export default class MCPattern extends Pattern {
+    constructor(raw: string) {
+        super(raw);
     }
 
-    decodeDescription(file: MCReader): void {
-        for (const line of file.desc) {
+    protected split(): { desc: string[]; patternTxt: string[] } {
+        const lines = this.raw.split(/\r\n|\n/);
+        for (const line of lines) {
+            if (line.length > 0) {
+                const firstChar = line.charAt(0);
+                if (firstChar === "#" || firstChar === "[") {
+                    this.desc.push(line);
+                } else {
+                    this.patternTxt.push(line);
+                }
+            }
         }
+        return { desc: this.desc, patternTxt: this.patternTxt };
     }
 
-    decodeRawPattern() {
+    protected decode(): Node {
         const nodes: Node[] = [];
         nodes.push(Hashlife.generateCanonical0(3));
 
-        for (const line of this.file.rawPattern) {
+        for (const line of this.patternTxt) {
             const firstChar = line.charAt(0);
             let tempNode: Node;
 
@@ -44,7 +51,12 @@ export default class MCPattern {
             nodes.push(tempNode);
         }
 
+        this.rootNode = nodes[nodes.length - 1];
         return nodes[nodes.length - 1];
+    }
+
+    toString(): string {
+        throw new Error("Method not implemented.");
     }
 
     /**
