@@ -1,7 +1,8 @@
 import express from "express";
 const router = express.Router();
-import { getPattern } from "../controllers/patternController";
 
 router.route("/").get();
+
+router.route("/:pattern_name").get();
 
 export default router;

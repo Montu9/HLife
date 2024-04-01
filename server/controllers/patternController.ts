@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 
-const getMcPatterns = async (req: Request, res: Response) => {
+const getPattern = async (req: Request, res: Response) => {
     return res.sendStatus(200);
 };
 
-export { getMcPatterns };
+export { getPattern };
