@@ -1,9 +1,10 @@
+import { Observer } from "./utils/Observer";
 import {
     cameraToSceneCoordinates,
     cameraToScreenCoordinates,
     scaleWithAnchorPoint,
 } from "./utils/camera";
-import { CAMERA_ANGLE, RECT_H, RECT_W } from "./utils/constants";
+import { CAMERA_ANGLE } from "./utils/constants";
 
 export interface CanvasState {
     shouldRender: boolean;
@@ -21,6 +22,7 @@ export interface CanvasState {
         y: number;
         z: number;
     };
+    observers: Observer[];
 }
 
 const getInitialCanvasState = (): CanvasState => {
@@ -40,12 +42,13 @@ const getInitialCanvasState = (): CanvasState => {
             y: 0,
             z: 0,
         },
+        observers: [],
     };
 };
 let canvasData = getInitialCanvasState();
 
 export default class CanvasStore {
-    private static get data() {
+    public static get data() {
         if (!canvasData)
             canvasData = {
                 shouldRender: true,
@@ -63,6 +66,7 @@ export default class CanvasStore {
                     y: 0,
                     z: 0,
                 },
+                observers: [],
             };
         return canvasData;
     }
@@ -77,6 +81,31 @@ export default class CanvasStore {
         canvasData.camera.x = 0;
         canvasData.camera.y = 0;
         canvasData.camera.z = containerWidth / (2 * Math.tan(CAMERA_ANGLE));
+    }
+
+    public static attach(observer: Observer): void {
+        const isExist = canvasData.observers.includes(observer);
+        if (isExist) {
+            return console.log("exists");
+        }
+        canvasData.observers.push(observer);
+    }
+
+    public static detach(observer: Observer): void {
+        const observerIndex = canvasData.observers.indexOf(observer);
+        if (observerIndex === -1) {
+            return console.log("Subject: Nonexistent observer.");
+        }
+
+        canvasData.observers.splice(observerIndex, 1);
+        console.log("Subject: Detached an observer.");
+    }
+
+    public static notify(): void {
+        for (const observer of canvasData.observers) {
+            observer.update(canvasData);
+            console.log(observer);
+        }
     }
 
     public static get screen() {
@@ -107,6 +136,14 @@ export default class CanvasStore {
     }
     public static set shouldRender(value: boolean) {
         canvasData.shouldRender = value;
+    }
+
+    public static get observers() {
+        return canvasData.observers;
+    }
+
+    public static set observers(value: Observer) {
+        canvasData.observers.push(value);
     }
 
     private static get container() {
@@ -194,5 +231,7 @@ export default class CanvasStore {
         const { x: left, y: top } = this.screen;
         this.data.pointer.x = left + deltaX / scale.x;
         this.data.pointer.y = top + deltaY / scale.y;
+        console.log("poitner");
+        this.notify();
     }
 }

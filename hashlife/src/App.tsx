@@ -1,26 +1,16 @@
-import axios from "./api/axios";
 import CanvasRoot from "./components/canvas/CanvasRoot";
-import MCPattern from "./hashlife/MCPattern";
+import GuiRoot from "./components/gui/GuiRoot";
 
 function App() {
-    const handleClick = async () => {
-        try {
-            const { data } = await axios.get("/all/mc/oscillator1.mc");
-
-            const pattern: MCPattern = new MCPattern(data);
-            console.dir(pattern, { depth: 1 });
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
     return (
-        <>
-            <CanvasRoot />
-            <div className="gui-control">
-                <button onClick={handleClick}>Pobierz</button>
+        <div className="w-full h-full">
+            <div className="absolute top-0 left-0 w-full h-full">
+                <CanvasRoot />
             </div>
-        </>
+            <div className="absolute top-0 left-0 w-full h-full">
+                <GuiRoot />
+            </div>
+        </div>
     );
 }
 
