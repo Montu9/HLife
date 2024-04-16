@@ -1,49 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { CanvasConfig, IBoard } from "../components/canvas/CanvasConfig";
+import CanvasStore from "../components/canvas/CanvasState";
+import GridCConfig from "../components/canvas/GridCConfig";
+import useRenderLoop from "../components/canvas/RenderLoop";
 
-interface CanvasSize {
-    width: number;
-    height: number;
+interface UseCanvasProps {
+    //draw: (ctx: CanvasRenderingContext2D, frameCount: number) => void;
+    config: GridCConfig;
 }
 
-const initGridDraw = (ctx, w, h, step) => {
-    console.log(w, h);
-    ctx.beginPath();
-    for (let x = 0.5; x <= w; x += step) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-    }
-
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.beginPath();
-    for (let y = 0.5; y <= h; y += step) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-    }
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-};
-
-const setCanvasSize = (c, width, height) => {
-    let ratio = window.devicePixelRatio,
-        style = c.style;
-
-    style.width = "" + width / ratio + "px";
-    style.height = "" + height / ratio + "px";
-
-    c.width = width;
-    c.height = height;
-};
-
-const useCanvas = (draw: (ctx: CanvasRenderingContext2D, frameCount: number) => void) => {
+const useCanvas = (props: UseCanvasProps) => {
+    const { config } = props;
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [canvasSize, setCanvasSize] = useState<CanvasSize>({
-        width: window.innerWidth,
-        height: window.innerHeight,
-    });
+    //useRenderLoop(60);
+
+    console.log("canvas use canvas");
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -52,37 +23,31 @@ const useCanvas = (draw: (ctx: CanvasRenderingContext2D, frameCount: number) => 
         const context = canvas.getContext("2d");
         if (!context) return;
 
-        //setCanvasSize(canvas, canvas.width, canvas.height);
+        const board: IBoard = { canvas, context };
 
-        canvas.width = canvasSize.width;
-        canvas.height = canvasSize.height;
+        config.init(board);
+        config.preDraw(board);
 
+        console.log("canvas useeffect");
+
+        // Render loop
         let frameCount: number = 0;
         let animationFrameId: number;
 
         const render = () => {
+            context.clearRect(0, 0, canvas.width, canvas.height);
             frameCount++;
-            draw(context, frameCount);
+            config.draw(board);
             animationFrameId = window.requestAnimationFrame(render);
         };
-        //render();
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        render();
 
-        initGridDraw(context, canvas.width, canvas.height, 20);
-
-        const handleResize = () => {
-            setCanvasSize({
-                width: window.innerWidth,
-                height: window.innerHeight,
-            });
-        };
-        window.addEventListener("resize", handleResize);
+        config.postDraw(board);
 
         return () => {
             window.cancelAnimationFrame(animationFrameId);
-            window.removeEventListener("resize", handleResize);
         };
-    }, [draw, canvasSize]);
+    });
 
     return canvasRef;
 };
