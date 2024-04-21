@@ -36,11 +36,11 @@ export default class GridCConfig extends CanvasConfig {
 
     grid(board: IBoard): void {
         const scale = CanvasStore.scale;
-        const width = board.canvas.width;
-        const height = board.canvas.height;
+        const { width, height } = board.canvas;
+        const { x0, y0 } = CanvasStore.screen;
         const scaledCellWidth = this.cellWidth * scale.x;
-        const left = ((CanvasStore.screen.width + CanvasStore.camera.x * -1) / 2) % scaledCellWidth;
-        const top = ((CanvasStore.screen.height + CanvasStore.camera.y * -1) / 2) % scaledCellWidth;
+        const left = (x0 - scaledCellWidth / 2) % scaledCellWidth;
+        const top = (y0 - scaledCellWidth / 2) % scaledCellWidth;
 
         board.context.beginPath();
         for (let x = left; x <= width; x += scaledCellWidth) {
@@ -60,21 +60,21 @@ export default class GridCConfig extends CanvasConfig {
         board.context.lineWidth = this.gridWidth;
         board.context.stroke();
 
+        this.printPoint(120, 120, board);
         this.OXY(board);
     }
 
     private OXY(board: IBoard): void {
-        const width = board.canvas.width;
-        const height = board.canvas.height;
-        const top = (CanvasStore.screen.height + CanvasStore.camera.y * -1) / 2;
-        const left = (CanvasStore.screen.width + CanvasStore.camera.x * -1) / 2;
+        const { width, height } = board.canvas;
+
+        const { x0: x, y0: y } = CanvasStore.screen;
 
         board.context.beginPath();
-        board.context.moveTo(left, 0);
-        board.context.lineTo(left, height);
+        board.context.moveTo(x, 0);
+        board.context.lineTo(x, height);
 
-        board.context.moveTo(0, top);
-        board.context.lineTo(width, top);
+        board.context.moveTo(0, y);
+        board.context.lineTo(width, y);
 
         board.context.strokeStyle = "#000000";
         board.context.lineWidth = 3;

@@ -22,7 +22,7 @@ const CanvasRoot = React.memo(() => {
 
     const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
         setIsPanning(true);
-        setLastPanPosition({ x: event.clientX, y: event.nativeEvent.clientY });
+        setLastPanPosition({ x: event.clientX, y: event.clientY });
     };
 
     const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
@@ -31,20 +31,21 @@ const CanvasRoot = React.memo(() => {
         const currentX = event.clientX;
         const currentY = event.clientY;
 
-        const maxDelta = 5;
-        const deltaX =
-            Math.abs(currentX - lastPanPosition.x) < maxDelta
-                ? currentX - lastPanPosition.x
-                : Math.sign(currentX - lastPanPosition.x) * maxDelta;
-        const deltaY =
-            Math.abs(currentY - lastPanPosition.y) < maxDelta
-                ? currentY - lastPanPosition.y
-                : Math.sign(currentY - lastPanPosition.y) * maxDelta;
+        // const maxDelta = 50000;
+        // const deltaX =
+        //     Math.abs(currentX - lastPanPosition.x) < maxDelta
+        //         ? currentX - lastPanPosition.x
+        //         : Math.sign(currentX - lastPanPosition.x) * maxDelta;
+        // const deltaY =
+        //     Math.abs(currentY - lastPanPosition.y) < maxDelta
+        //         ? currentY - lastPanPosition.y
+        //         : Math.sign(currentY - lastPanPosition.y) * maxDelta;
 
+        const deltaX = currentX - lastPanPosition.x;
+        const deltaY = currentY - lastPanPosition.y;
         setLastPanPosition({ x: currentX, y: currentY });
-        CanvasStore.moveCamera(-deltaX, -deltaY);
-
-        console.log(CanvasStore.camera, CanvasStore.screen);
+        CanvasStore.moveCamera(deltaX, deltaY);
+        CanvasStore.movePointer(currentX, currentY);
     };
 
     const handleMouseUp = () => {

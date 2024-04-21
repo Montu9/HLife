@@ -1,7 +1,6 @@
-import { Observer } from "./utils/Observer";
 import {
-    cameraToSceneCoordinates,
     cameraToScreenCoordinates,
+    cameraToSceneCoordinates,
     scaleWithAnchorPoint,
 } from "./utils/camera";
 import { CAMERA_ANGLE } from "./utils/constants";
@@ -17,15 +16,26 @@ export interface CanvasState {
         x: number;
         y: number;
     };
+    currentCell: {
+        x: number;
+        y: number;
+    };
     camera: {
         x: number;
         y: number;
         z: number;
     };
-    observers: Observer[];
+    cell: {
+        color: string;
+        width: number;
+    };
+    grid: {
+        color: string;
+    };
+    observers: ((value: CanvasState) => void)[];
 }
 
-const getInitialCanvasState = (): CanvasState => {
+export const getInitialCanvasState = (): CanvasState => {
     return {
         shouldRender: true,
         pixelRatio: window.devicePixelRatio || 1,
@@ -37,82 +47,60 @@ const getInitialCanvasState = (): CanvasState => {
             x: 0,
             y: 0,
         },
+        currentCell: {
+            x: 0,
+            y: 0,
+        },
         camera: {
             x: 0,
             y: 0,
             z: 0,
         },
+        cell: {
+            color: "#808080",
+            width: 20,
+        },
+        grid: {
+            color: "#2848eb",
+        },
         observers: [],
     };
 };
+
 let canvasData = getInitialCanvasState();
 
 export default class CanvasStore {
     public static get data() {
-        if (!canvasData)
-            canvasData = {
-                shouldRender: true,
-                pixelRatio: window.devicePixelRatio || 1,
-                container: {
-                    width: 0,
-                    height: 0,
-                },
-                pointer: {
-                    x: 0,
-                    y: 0,
-                },
-                camera: {
-                    x: 0,
-                    y: 0,
-                    z: 0,
-                },
-                observers: [],
-            };
+        if (!canvasData) canvasData = getInitialCanvasState();
         return canvasData;
     }
 
     static initialize(width: number, height: number) {
-        const containerWidth = width;
-        const containerHeight = height;
         canvasData = getInitialCanvasState();
-        canvasData.pixelRatio = window.devicePixelRatio || 1;
-        canvasData.container.width = containerWidth;
-        canvasData.container.height = containerHeight;
-        canvasData.camera.x = 0;
-        canvasData.camera.y = 0;
-        canvasData.camera.z = containerWidth / (2 * Math.tan(CAMERA_ANGLE));
+        canvasData.container.width = width;
+        canvasData.container.height = height;
+        canvasData.camera.z = width / (2 * Math.tan(CAMERA_ANGLE));
     }
 
-    public static attach(observer: Observer): void {
-        const isExist = canvasData.observers.includes(observer);
-        if (isExist) {
-            return console.log("exists");
+    public static attach(callback: (value: CanvasState) => void): void {
+        const isExist = canvasData.observers.includes(callback);
+        if (!isExist) {
+            canvasData.observers.push(callback);
         }
-        canvasData.observers.push(observer);
     }
 
-    public static detach(observer: Observer): void {
-        const observerIndex = canvasData.observers.indexOf(observer);
+    public static detach(callback: (value: CanvasState) => void): void {
+        const observerIndex = canvasData.observers.indexOf(callback);
         if (observerIndex === -1) {
-            return console.log("Subject: Nonexistent observer.");
+            return;
         }
-
         canvasData.observers.splice(observerIndex, 1);
-        console.log("Subject: Detached an observer.");
     }
 
     public static notify(): void {
         for (const observer of canvasData.observers) {
-            observer.update(canvasData);
-            console.log(observer);
+            observer(this.data);
         }
-    }
-
-    public static get screen() {
-        const { x, y, z } = this.camera;
-        const aspect = this.aspect;
-        const angle = CAMERA_ANGLE;
-        return cameraToScreenCoordinates(x, y, z, angle, aspect);
     }
 
     public static get scene() {
@@ -122,28 +110,33 @@ export default class CanvasStore {
         return cameraToSceneCoordinates(x, y, z, angle, aspect);
     }
 
+    public static get screen() {
+        const { x, y, z } = this.camera;
+        const aspect = this.aspect;
+        const angle = CAMERA_ANGLE;
+        return cameraToScreenCoordinates(x, y, z, angle, aspect, this.scale.x, this.scale.y);
+    }
+
     public static get camera() {
         return this.data.camera;
     }
 
     public static get scale() {
-        const { width: w, height: h } = CanvasStore.screen;
+        const { width: w, height: h } = CanvasStore.scene;
         const { width: cw, height: ch } = CanvasStore.container;
         return { x: cw / w, y: ch / h };
     }
+
+    public static get cell() {
+        return this.data.cell;
+    }
+
     public static get shouldRender() {
         return canvasData.shouldRender;
     }
+
     public static set shouldRender(value: boolean) {
         canvasData.shouldRender = value;
-    }
-
-    public static get observers() {
-        return canvasData.observers;
-    }
-
-    public static set observers(value: Observer) {
-        canvasData.observers.push(value);
     }
 
     private static get container() {
@@ -163,16 +156,16 @@ export default class CanvasStore {
     }
 
     public static moveCamera(mx: number, my: number) {
-        const scrollFactor = 1.5;
+        const scrollFactor = 1;
         const deltaX = mx * scrollFactor,
             deltaY = my * scrollFactor;
         const { x, y, z } = this.camera;
+        console.log(deltaX);
         if (this.isCameraInBounds(x + deltaX, y + deltaY, z)) {
-            this.data.camera.x += deltaX;
+            this.data.camera.x -= deltaX;
             this.data.camera.y += deltaY;
             // move pointer by the same amount
             this.shouldRender = true;
-            this.movePointer(deltaY, deltaY);
         }
     }
 
@@ -188,25 +181,29 @@ export default class CanvasStore {
     }
 
     public static zoomCamera(deltaX: number, deltaY: number) {
+        console.log("camera", CanvasStore.camera);
+        console.log("scene", CanvasStore.scene);
+        console.log("screen", CanvasStore.screen);
         // Normal zoom is quite slow, we want to scale the amount quite a bit
-        const zoomScaleFactor = 10;
+        const zoomScaleFactor = 4;
         const deltaAmount = zoomScaleFactor * Math.max(deltaY);
         const { x: oldX, y: oldY, z: oldZ } = this.camera;
         const oldScale = { ...this.scale };
 
         const { width: containerWidth, height: containerHeight } = this.container;
-        const { width, height } = cameraToScreenCoordinates(
+        const { width, height } = cameraToSceneCoordinates(
             oldX,
             oldY,
             oldZ + deltaAmount,
             CAMERA_ANGLE,
             this.aspect
         );
+        const { x: x0, y: y0 } = this.pointer;
         const newScaleX = containerWidth / width;
         const newScaleY = containerHeight / height;
         const { x: newX, y: newY } = scaleWithAnchorPoint(
-            this.pointer.x,
-            this.pointer.y,
+            x0,
+            y0,
             oldX,
             oldY,
             oldScale.x,
@@ -215,6 +212,7 @@ export default class CanvasStore {
             newScaleY
         );
         const newZ = oldZ + deltaAmount;
+        if (newZ < 1) return;
         this.shouldRender = true;
         if (this.isCameraInBounds(oldX, oldY, newZ)) {
             this.data.camera = {
@@ -225,13 +223,26 @@ export default class CanvasStore {
         }
     }
 
-    // pointer position from top left of the screen
-    public static movePointer(deltaX: number, deltaY: number) {
+    public static movePointer(clientX: number, clientY: number) {
+        //console.log(clientX, clientY);
         const scale = this.scale;
-        const { x: left, y: top } = this.screen;
-        this.data.pointer.x = left + deltaX / scale.x;
-        this.data.pointer.y = top + deltaY / scale.y;
-        console.log("poitner");
+        const { width: cellWidth } = this.cell;
+        const { x: left, y: top } = this.scene;
+
+        const pointerX = left + clientX / scale.x;
+        const pointerY = top - clientY / scale.y;
+        //console.log(top, clientY, scale.y, pointerY);
+
+        this.data.pointer.x = Math.floor(pointerX);
+        this.data.pointer.y = Math.floor(pointerY);
+        this.data.currentCell.x = ~~(
+            (Math.sign(pointerX) * (Math.abs(pointerX) + cellWidth / 2)) /
+            (scale.x * cellWidth)
+        );
+        this.data.currentCell.y = ~~(
+            (Math.sign(pointerY) * (Math.abs(pointerY) + cellWidth / 2)) /
+            (scale.y * cellWidth)
+        );
         this.notify();
     }
 }

@@ -1,26 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import MCPattern from "../../hashlife/MCPattern";
 import CanvasStore, { CanvasState } from "../canvas/CanvasState";
-import useCanvas from "../../hooks/useCanvas";
-import { Observer } from "../canvas/utils/Observer";
-
-class ConcreteObserverB implements Observer {
-    public update(subject: CanvasState): void {
-        console.log(subject.pointer);
-    }
-}
 
 const GuiRoot = () => {
-    const observer1 = new ConcreteObserverB();
-    useEffect(() => {
-        CanvasStore.attach(observer1);
-        console.log("asd");
-    });
+    const [pixelRatio, setPixelRatio] = useState<CanvasState | null>(null);
 
     useEffect(() => {
-        console.log(useCanvas);
-    }, [useCanvas]);
+        const updatePixelRatio = (value: CanvasState) => {
+            setPixelRatio({ ...value });
+            //console.log(CanvasStore.camera);
+            //console.log(value, CanvasStore.scene, CanvasStore.screen);
+        };
+        CanvasStore.attach(updatePixelRatio);
+
+        return () => CanvasStore.detach(updatePixelRatio);
+    });
 
     const handleClick = async () => {
         try {
@@ -35,7 +30,12 @@ const GuiRoot = () => {
 
     return (
         <div className="w-full h-full">
-            <button onClick={handleClick}>Pobierz</button>
+            <button onClick={handleClick}>
+                Pobierz{pixelRatio?.pointer.x},{pixelRatio?.pointer.y}
+            </button>
+            <h1>
+                {pixelRatio?.currentCell.x}, {pixelRatio?.currentCell.y}
+            </h1>
         </div>
     );
 };
