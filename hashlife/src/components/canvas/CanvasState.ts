@@ -131,6 +131,10 @@ export default class CanvasStore {
         return this.data.cell;
     }
 
+    public static get currentCell() {
+        return this.data.currentCell;
+    }
+
     public static get shouldRender() {
         return canvasData.shouldRender;
     }
@@ -157,8 +161,8 @@ export default class CanvasStore {
 
     public static moveCamera(mx: number, my: number) {
         const scrollFactor = 1;
-        const deltaX = mx * scrollFactor,
-            deltaY = my * scrollFactor;
+        const deltaX = (mx * scrollFactor) / this.scale.x,
+            deltaY = (my * scrollFactor) / this.scale.y;
         const { x, y, z } = this.camera;
         console.log(deltaX);
         if (this.isCameraInBounds(x + deltaX, y + deltaY, z)) {
@@ -235,13 +239,14 @@ export default class CanvasStore {
 
         this.data.pointer.x = Math.floor(pointerX);
         this.data.pointer.y = Math.floor(pointerY);
+        console.log(scale.x, cellWidth);
         this.data.currentCell.x = ~~(
             (Math.sign(pointerX) * (Math.abs(pointerX) + cellWidth / 2)) /
-            (scale.x * cellWidth)
+            cellWidth
         );
         this.data.currentCell.y = ~~(
             (Math.sign(pointerY) * (Math.abs(pointerY) + cellWidth / 2)) /
-            (scale.y * cellWidth)
+            cellWidth
         );
         this.notify();
     }

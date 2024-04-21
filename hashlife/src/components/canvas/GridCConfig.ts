@@ -60,7 +60,13 @@ export default class GridCConfig extends CanvasConfig {
         board.context.lineWidth = this.gridWidth;
         board.context.stroke();
 
-        this.printPoint(120, 120, board);
+        this.printCell(0, 0, board);
+        this.printCell(2, 3, board);
+        this.printCell(-2, 1, board);
+        this.printCell(-3, -3, board);
+        this.printCell(1, -1, board);
+
+        this.printCell(CanvasStore.currentCell.x, CanvasStore.currentCell.y, board);
         this.OXY(board);
     }
 
@@ -84,7 +90,7 @@ export default class GridCConfig extends CanvasConfig {
     printCell(x: number, y: number, board: IBoard): void {
         const scale = CanvasStore.scale;
         const scaledCellWidth = this.cellWidth * scale.x;
-        const { x0, y0 } = CanvasStore.scene;
+        const { x0, y0 } = CanvasStore.screen;
         const cellY = y0 - y * scaledCellWidth - scaledCellWidth / 2;
         const cellX = x0 + x * scaledCellWidth - scaledCellWidth / 2;
 
